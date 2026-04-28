@@ -30,7 +30,7 @@
 * Returns:
 *   activated value based on ReLU function 
 */
-__host__ __device__ float relu(float x) { return x > 0 ? x : 0; }
+float relu(float x) { return x > 0 ? x : 0; }
 
 /* Derivative of ReLU activation function
 * Arguments:
@@ -74,6 +74,48 @@ void train_model(MODEL* model){
     init_weights(model->W1, SIZE*H1); init_weights(model->b1, H1);
     init_weights(model->W2, H1*H2); init_weights(model->b2, H2);
     init_weights(model->W3, H2*CLASSES); init_weights(model->b3, CLASSES);
+    
+
+    //GPU memory
+    float *d_train, *d_W1, *d_b1, *d_h1, *d_h1a;
+    float *d_W2, *d_b2, *d_h2, *d_h2a;
+    float *d_W3, *d_b3, *d_out;
+    
+    //CPU memory
+    float h1[H1], h1a[H1];
+    float h2[H2], h2a[H2];
+    float out[CLASSES];
+    
+    cudaMalloc(&d_train, SIZE * sizeof(float));
+
+    cudaMalloc(&d_W1, SIZE * H1 * sizeof(float));
+    cudaMalloc(&d_b1, H1 * sizeof(float));
+    cudaMalloc(&d_h1, H1 * sizeof(float));
+    cudaMalloc(&d_h1a, H1 * sizeof(float));
+
+    cudaMalloc(&d_W2, H1 * H2 * sizeof(float));
+    cudaMalloc(&d_b2, H2 * sizeof(float));
+    cudaMalloc(&d_h2, H2 * sizeof(float));
+    cudaMalloc(&d_h2a, H2 * sizeof(float));
+
+    
+    cudaMalloc(&d_W3, H2 * CLASSES * sizzeof(float));
+    cudaMalloc(&d_b3, CLASSES * sizeof(float));
+    cudaMalloc(&d_out, CLASSES * sizeof(float));
+
+    cudaMemcpy(d_W1, model->W1, SIZE * H1 * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b1, model->b1, H1 * sizeof(float), cudaMemcpyHostToDevice);
+    
+    cudaMemcpy(d_W2, model->W2, H1 * H2 * sizeof(float), cudaMemcpyHostDevice);
+    cudaMemcpy(d_b2, model->b2, H2 * sizeof(float), cudaMemcpyHostToDevice);
+
+    cudaMemcpy(d_W3, model->W3, H2 * CLASSES * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b3, model->b3, CLASSES * sizeof(float), cudaMemcpyHostToDevice);
+
+    int threadsPerBlock = 256;
+    int blocksH1 = (H1 + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksH2 = (H2 + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksOut = (CLASSES + threadsPerBlock - 1) / threadsPerBlock;
 
     for (int epoch=0; epoch<EPOCHS; epoch++) {
         float loss=0;

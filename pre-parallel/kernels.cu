@@ -8,7 +8,13 @@
  *     __global__ void test_kernel(){}
  */
 
-__global__ void foward_h1(float *train_data_n, float *W1, float *b1, float *h1, float *h1a, int SIZE, int H1){
+
+__host__ __device__ void relu(float x){
+    return x > 0 ? x : 0;
+
+}
+
+__global__ void forward_h1(float *train_data_n, float *W1, float *b1, float *h1, float *h1a, int SIZE, int H1){
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     if (j < H1){
         float sum = b1[j];
@@ -22,7 +28,7 @@ __global__ void foward_h1(float *train_data_n, float *W1, float *b1, float *h1, 
     }
 }
 
-__global__ void forward_h2(float *h1a,float *W2, float *b2, float *h2, float *h2a, int H1 int H2){
+__global__ void forward_h2(float *h1a,float *W2, float *b2, float *h2, float *h2a, int H1, int H2){
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     if (j < H2){
         float sum = b2[j];
@@ -36,7 +42,7 @@ __global__ void forward_h2(float *h1a,float *W2, float *b2, float *h2, float *h2
     }
 }
 
-__global__ void forward_out(float*h2a, float* W3, *b3, float *out, int H2, int CLASSES){
+__global__ void forward_out(float*h2a, float* W3, float *b3, float *out, int H2, int CLASSES){
     int k = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(k < CLASSES){
