@@ -9,11 +9,11 @@
  */
 
 
-__host__ __device__ float relu(float x){
+__host__ __device__ static inline float d_relu(float x){
     return x > 0 ? x : 0;
 }
 
-__host__ __device__ float drelu(float y) {
+__host__ __device__ static inline float d_drelu(float y) {
     return y > 0 ? 1 : 0;
 }
 
@@ -27,7 +27,7 @@ __global__ void forward_h1(float *train_data_n, float *W1, float *b1, float *h1,
         }
 
         h1[j] = sum;
-        h1a[j] = relu(sum);
+        h1a[j] = d_relu(sum);
     }
 }
 
@@ -41,7 +41,7 @@ __global__ void forward_h2(float *h1a,float *W2, float *b2, float *h2, float *h2
         }
 
         h2[j] = sum;
-        h2a[j] = relu(sum);
+        h2a[j] = d_relu(sum);
     }
 }
 
@@ -66,7 +66,7 @@ __global__ void backprop_delta2(float *delta3, float *W3, float *h2a, float *del
         for(int k = 0; k < num_classes; k++){
             err += delta3[k] * W3[j * num_classes + k];
         }
-        delta2[j] = err * drelu(h2a[j]); 
+        delta2[j] = err * d_drelu(h2a[j]); 
     }
 }
 
@@ -77,7 +77,7 @@ __global__ void backprop_delta1(float *delta2, float *W2, float *h1a, float *del
         for(int k = 0; k < h2_size; k++){
             err += delta2[k] * W2[j * h2_size + k];
         }
-        delta1[j] = err * drelu(h1a[j]);
+        delta1[j] = err * d_drelu(h1a[j]);
     }
 }
 
