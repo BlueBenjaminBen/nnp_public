@@ -64,7 +64,7 @@ __global__ void backprop_delta2(float *delta3, float *W3, float *h2a, float *del
     if (j < H2){
         float err = 0;
         for(int k = 0; k < CLASSES; k++){
-            err += delta3 * W3[j * CLASSES + k];
+            err += delta3[k] * W3[j * CLASSES + k];
         }
         delta2[j] = err * drelu(h2a[j]); 
     }
@@ -75,9 +75,9 @@ __global__ void backprop_delta1(float *delta2, float *W2, float *h1a, float *del
     if (j < H1){
         float err = 0;
         for(int k = 0; k < H2; k++){
-            err += delta2 * W2[j * H2 + k];
+            err += delta2[k] * W2[j * H2 + k];
         }
-        delta1[j] == err * drelu(h1a[j]);
+        delta1[j] = err * drelu(h1a[j]);
     }
 }
 
@@ -122,13 +122,13 @@ __global__ void update_W1(float *W1, float *delta1, float *train_data_n, float l
     if (idx < total){
         int j = idx / H1;
         int k = idx % H1;
-        W1[idx] += lr * delta1[j] * train_data_n[i];
+        W1[idx] += lr * delta1[k] * train_data_n[j];
     }
 }
 
 __global__ void update_b1(float *b1, float *delta1, float lr, int H1){
-        int j = blockIdx.x * blockDim.x + threadIdx.x;
-        int (j < H1){
-            b1[j] += lr * delta1[j];
-        }
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    if (j < H1){
+        b1[j] += lr * delta1[j];
+    }
 }

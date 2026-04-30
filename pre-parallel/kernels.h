@@ -19,7 +19,7 @@ __global__ void forward_out(float *h2a, float *W3, float *b3, float *out, int H2
 
 __global__ void backprop_delta2(float *delta3, float *W3, float *h2a, float *delta2, int H2, int CLASSES);
 
-__global void backprop_delta1(float *delta2, float *W2, float *h1a, float *delta1, int H1, int H2);
+__global__ void backprop_delta1(float *delta2, float *W2, float *h1a, float *delta1, int H1, int H2);
 
 __global__ void update_W3(float *W3, float *delta3, float *h2a, float lr, int H2, int CLASSES);
 

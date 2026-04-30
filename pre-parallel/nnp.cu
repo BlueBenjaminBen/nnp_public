@@ -84,8 +84,6 @@ void train_model(MODEL* model){
 
 
     //CPU memory
-    float h1[H1], h1a[H1];
-    float h2[H2], h2a[H2];
     float out[CLASSES];
     
     cudaMalloc(&d_train, SIZE * sizeof(float));
@@ -135,12 +133,10 @@ void train_model(MODEL* model){
 
             forward_h1<<<blocksH1, threadsPerBlock>>>(d_train, d_W1, d_b1, d_h1, d_h1a, SIZE, H1);
             forward_h2<<<blocksH2, threadsPerBlock>>>(d_h1a, d_W2, d_b2, d_h2, d_h2a, H1, H2);
-            forward_out<<<blocksOut, threadsPerBlock>>>(d_h2a, d_W3, d_b3, d_out, H2, CLASSS);
+            forward_out<<<blocksOut, threadsPerBlock>>>(d_h2a, d_W3, d_b3, d_out, H2, CLASSES);
 
 
             float outa[CLASSES];
-            cudaMemcpy(h1a, d_h1a, H1 * sizeof(float), cudaMemcpyDeviceToHost);
-            cudaMemcpy(h2a, d_h2a, H2 * sizeof(float), cudaMemcpyDeviceToHost);
             cudaMemcpy(out, d_out, CLASSES * sizeof(float), cudaMemcpyDeviceToHost);
 
 
