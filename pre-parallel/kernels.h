@@ -11,6 +11,7 @@
 
 #ifndef KERNELS_H
 #define KERNELS_H
+//Declare all kernel functions from kernels.cu so that they can be used in nnp.cu
 __global__ void forward_h1(float *train_data_n, float *W1, float *b1, float *h1, float *h1a, int input_size, int h1_size);
 
 __global__ void forward_h2(float *h1a, float *W2, float *b2, float *h2, float *h2a, int h1_size, int h2_size);

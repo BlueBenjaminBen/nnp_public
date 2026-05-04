@@ -85,7 +85,8 @@ void train_model(MODEL* model){
 
     //CPU memory
     float out[CLASSES];
-    
+       
+    //Malloc memory to be used on the GPU    
     cudaMalloc(&d_train, SIZE * sizeof(float));
 
     cudaMalloc(&d_W1, SIZE * H1 * sizeof(float));
@@ -115,7 +116,8 @@ void train_model(MODEL* model){
 
     cudaMemcpy(d_W3, model->W3, H2 * CLASSES * sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b3, model->b3, CLASSES * sizeof(float), cudaMemcpyHostToDevice);
-
+    
+    //Define number of threads per block and figure out how many blocks there will be
     int threadsPerBlock = 256;
     int blocksH1 = (H1 + threadsPerBlock - 1) / threadsPerBlock;
     int blocksH2 = (H2 + threadsPerBlock - 1) / threadsPerBlock;
@@ -130,13 +132,15 @@ void train_model(MODEL* model){
         for (int n=0; n<NUM_TRAIN; n++) {
             // ---------- Forward ----------
             cudaMemcpy(d_train, train_data[n], SIZE * sizeof(float), cudaMemcpyHostToDevice);
-
+            
+            //Call kernel functions
             forward_h1<<<blocksH1, threadsPerBlock>>>(d_train, d_W1, d_b1, d_h1, d_h1a, SIZE, H1);
             forward_h2<<<blocksH2, threadsPerBlock>>>(d_h1a, d_W2, d_b2, d_h2, d_h2a, H1, H2);
             forward_out<<<blocksOut, threadsPerBlock>>>(d_h2a, d_W3, d_b3, d_out, H2, CLASSES);
 
-
+                
             float outa[CLASSES];
+            //Copy the value from gpu to host
             cudaMemcpy(out, d_out, CLASSES * sizeof(float), cudaMemcpyDeviceToHost);
 
 
@@ -151,11 +155,13 @@ void train_model(MODEL* model){
             for (int k=0;k<CLASSES;k++)
                 delta3[k] = train_label[n][k]-outa[k];
             cudaMemcpy(d_delta3, delta3, CLASSES * sizeof(float), cudaMemcpyHostToDevice);
-
+            
+            //Call kernel functions
             backprop_delta2<<<blocksH2, threadsPerBlock>>>(d_delta3, d_W3, d_h2a, d_delta2, H2, CLASSES);
             backprop_delta1<<<blocksH1, threadsPerBlock>>>(d_delta2, d_W2, d_h1a, d_delta1, H1, H2);
 
             // ---------- Update ----------
+            // Call kernel functions
             update_W3<<<blocksW3, threadsPerBlock>>>(d_W3, d_delta3, d_h2a, LR, H2, CLASSES);
             update_b3<<<blocksOut, threadsPerBlock>>>(d_b3, d_delta3, LR, CLASSES);
             update_W2<<<blocksW2, threadsPerBlock>>>(d_W2, d_delta2, d_h1a, LR, H1, H2);
@@ -166,6 +172,7 @@ void train_model(MODEL* model){
         printf("Epoch %d, Loss=%.4f\n", epoch, loss/NUM_TRAIN);
     }
     
+    //Copy the values back to the host from the gpu
     cudaMemcpy(model->W1, d_W1, SIZE * H1 * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(model->b1, d_b1, H1 * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(model->W2, d_W2, H1 * H2 * sizeof(float), cudaMemcpyDeviceToHost);
@@ -173,7 +180,7 @@ void train_model(MODEL* model){
     cudaMemcpy(model->W3, d_W3, H2 * CLASSES * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(model->b3, d_b3, CLASSES * sizeof(float), cudaMemcpyDeviceToHost);
 
-
+    //Free memory on the gpu
     cudaFree(d_train);
     cudaFree(d_W1);
     cudaFree(d_b1);
